@@ -57,14 +57,19 @@ class n_FitzHugh_Nagumo:
     def __init__(self, mon):
         self.states_to_mon = mon
         return
-    
+
     def eqs(self):
+        # active is a variable that can be used to assign which neurons are active. For time dependent stimuli,
+        # you can assign I_inj as the function ranging from [-1,1], use a network operator to update, and
+        # use active to assign max amplitude and active neurons.
         eqns_AL = '''
                     I_inj : amp
-                    I_syn : 1
-                    dV/dt = (V-(V**3)/(3*mV**2) - w - z*(V - nu) + 0.35*mV + I_inj*Mohm)/t1 : volt
+                    I_synI : 1
+                    I_synE : 1
+                    dV/dt = (V-(V**3)/(3*mV**2) - w - z*(V - nu) + I_synE*mV + 0.35*mV + I_inj*active*Mohm)/t1 : volt
                     dw/dt = (V - b*w + a*mV)/ms : volt
-                    dz/dt = (I_syn - z)/t2 : 1
+                    dz/dt = (I_synI - z)/t2 : 1
+                    active : 1
                     '''
         return eqns_AL
 
@@ -76,7 +81,7 @@ class n_FitzHugh_Nagumo:
                      't2': self.t2,
                      'refrac': self.refrac,
                      'thresh': self.thresh}
-                    
+
         return namespace
 
     def threshold(self):
@@ -93,10 +98,10 @@ class n_FitzHugh_Nagumo:
 
     def state_mon(self):
         return self.states_to_mon
-    
+
     def init_cond(self):
-        # return  dict(V = '-rand()*mV', w = 'rand()*mV', z = 'rand()')
-        return  dict(V = '-1.2*mV', w = '0.6*mV', z = '0')
+        return  dict(V = '-rand()*mV', w = 'rand()*mV', z = 'rand()')
+        # return  dict(V = '-1.2*mV', w = '0.6*mV', z = '0')
 
 
 
@@ -104,20 +109,14 @@ class n_FitzHugh_Nagumo:
 #non-linear excitatory synapses
 #gap junction inhibitory synapses
 class n_lif:
-    taum = 10*ms #membrane 
+    taum = 10*ms #membrane
 
     vt = -50*mV #threshold for spike
     vr = -74*mV #resting/reset potential
 
-    Ee = 0*mV
-    Ei = -100*mV
-
-    taue = 5*ms #1 ms diehl/cook
-    taui = 2*ms
-
     refKC = 2*ms
 
-    
+
 
     def __init__(self, mon):
         self.states_to_mon = mon
@@ -125,11 +124,10 @@ class n_lif:
 
     def eqs(self):
         eqns_KCs = '''
-                dv/dt = ((vr - v) + (I_synE-I_synI) / nS) / taum  : volt (unless refractory)
-                I_synE = ge * nS * (Ee - v)                        : amp
-                dge/dt = -ge/taue                                  : 1
-                dgi/dt = -gi/taui                                 : 1
-                I_synI                                            : amp
+                dv/dt = ((vr - v) + (I_synE+I_synI + I_inj) / nS) / taum  : volt (unless refractory)
+                I_synE                       : amp
+                I_synI                       : amp
+                I_inj                        : amp
                 '''
         return eqns_KCs
 
@@ -137,10 +135,6 @@ class n_lif:
         ns = dict(  taum = self.taum,
                     vt = self.vt,
                     vr = self.vr,
-                    Ee = self.Ee,
-                    Ei = self.Ei,
-                    taue = self.taue,
-                    taui = self.taui,
                     refrac = self.refKC)
         return ns
 
@@ -169,7 +163,7 @@ class n_li:
 
     #GGN
 
-    taum = 10*ms #membrane 
+    taum = 10*ms #membrane
     vr = -74*mV #resting/reset potential
 
     Ee = 0*mV
@@ -185,16 +179,13 @@ class n_li:
     def eqs(self):
         eqns_GGN = '''
                     dv/dt = ((vr - v) + I_synE/nS) / taum  : volt
-                    I_synE = ge * nS * (Ee - v) : amp
-                    dge/dt = -ge/taue : 1
+                    I_synE : amp
                     '''
         return eqns_GGN
 
     def namespace(self):
         ns = dict(  taum = self.taum,
                     vr = self.vr,
-                    Ee = self.Ee,
-                    taue = self.taue,
                     refrac = self.refGGN)
         return ns
 
@@ -215,6 +206,7 @@ class n_li:
 
     def init_cond(self):
         return dict(v = self.vr)
+
 
 
 #classic NaKL neuron
@@ -253,6 +245,8 @@ class n_HH:
     thresh = -20*mV
     refrac = -20*mV
 
+    scale = 1
+
 
     states_to_mon = ['V']
 
@@ -260,21 +254,22 @@ class n_HH:
     def __init__(self, mon):
         self.states_to_mon = mon
         return
-    
+
     def eqs(self):
         eqns_AL = '''
                     dV/dt = -1/C_m*(g_L*(V - E_L) + g_Na*m**3*h*(V - E_Na) \
-                            + g_K*n**4*(V - E_K) - I_inj + I_syn): volt
+                            + g_K*n**4*(V - E_K) - I_inj*active + I_syn): volt
                     I_inj: amp/meter**2
+                    active: 1
                     I_syn: amp/meter**2
                     dm/dt = (xm-m)/tm : 1
                     xm = 0.5*(1+tanh((V - vm)/dvm)) : 1
                     tm = tm0+tm1*(1-tanh((V - vm)/dvm)**2) : second
-                    
+
                     dh/dt = (xh-h)/th : 1
                     xh = 0.5*(1+tanh((V - vh)/dvh)) : 1
                     th = th0+th1*(1-tanh((V - vh)/dvh)**2): second
-                    
+
                     dn/dt = (xn-n)/tn : 1
                     xn = 0.5*(1+tanh((V - vn)/dvn)) : 1
                     tn = tn0+tn1*(1-tanh((V - vn)/dvn)**2) : second
@@ -302,8 +297,9 @@ class n_HH:
                          tn0 = self.tn0,
                          tn1 = self.tn1,
                          refrac = self.refrac,
-                         thresh = self.thresh)
-                    
+                         thresh = self.thresh,
+                         scale = self.scale)
+
         return namespace
 
     def threshold(self):
@@ -320,7 +316,7 @@ class n_HH:
 
     def state_mon(self):
         return self.states_to_mon
-    
+
     def init_cond(self):
         return  dict(V = '-70*mV*rand()',
                      m = 'rand()',
@@ -356,17 +352,20 @@ def init_cond(self):
     return initial conditions of the variables
 '''
 class s_FitzHughNagumo_inh:
-    
+
+    def __init__(self, cond):
+        self.g_syn = cond
+
     delay = 0*ms
 
     def __init__(self, conduct):
         self.g_syn = conduct
         return
-        
+
     def eqs(self):
         syn = '''
                 g_syn: 1
-                I_syn_post = g_syn/(1.0+exp(-1000*V_pre/mV)): 1 (summed)
+                I_synI_post = g_syn/(1.0+exp(-1000*V_pre/mV)): 1 (summed)
                 '''
         return syn
 
@@ -375,7 +374,7 @@ class s_FitzHughNagumo_inh:
 
     def onpost(self):
         return None
-        
+
     def namespace(self):
         return None
 
@@ -390,24 +389,32 @@ class s_FitzHughNagumo_inh:
 
 
 class s_lif_ex:
-
+    taue = 5*ms
+    Ee = 0*mV
     delay = 0*ms
 
     def __init__(self, conduct):
+        # What is this even?
         self.g_syn = conduct
         return
 
     def eqs(self):
-        return '''w_syn : 1'''
+        eqns_slif = '''dge_syn/dt = -ge_syn/taue : 1 (clock-driven)
+                    w_syn : 1
+                    I_synE_post = ge_syn * nS * (Ee - v_post) : amp (summed)'''
+
+        return eqns_slif
 
     def onpre(self):
-        return '''ge += w_syn'''
+        return '''ge_syn += w_syn'''
 
     def onpost(self):
         return None
 
     def namespace(self):
-        return None
+        ns = dict( taue = self.taue,
+                    Ee = self.Ee)
+        return ns
 
     def method(self):
         return 'rk4'
@@ -421,22 +428,29 @@ class s_lif_ex:
 class s_lif_in:
 
     delay = 0*ms
+    taui = 2*ms
+    Ei = -100*mV
 
     def __init__(self, conduct):
         self.g_syn = conduct
         return
 
     def eqs(self):
-        return '''w_syn : 1'''
+        return '''
+                dgi_syn/dt = -gi_syn/taui : 1 (clock-driven)
+                w_syn : 1
+                I_synI_post = gi_syn * nS * (Ei - v) : amp (summed)'''
 
     def onpre(self):
-        return '''gi += w_syn'''
+        return '''gi_syn += w_syn'''
 
     def onpost(self):
         return None
 
     def namespace(self):
-        return None
+        ns = dict (taui = self.taui,
+                    Ei = self.Ei)
+        return ns
 
     def method(self):
         return 'rk4'
@@ -460,7 +474,7 @@ class s_gapjunc_in:
     def eqs(self):
         S = '''
              w : 1
-             I_synI_post = w*(v_pre - v_post)*nS : amp (summed)
+             I_synI_post = -w*(v_pre - v_post)*nS : amp (summed)
              '''
         return S
 
@@ -484,6 +498,8 @@ class s_gapjunc_in:
 class s_lifSTDP_ex:
 
     delay = 0*ms
+    taue = 5*ms
+    Ee = 0*mV
 
     '''
     conduct: max conductance
@@ -501,12 +517,14 @@ class s_lifSTDP_ex:
     def eqs(self):
         S = '''w_syn : 1
             dApre/dt = -Apre / taupre : 1 (event-driven)
-            dApost/dt = -Apost / taupost : 1 (event-driven)'''
+            dApost/dt = -Apost / taupost : 1 (event-driven)
+            dge_syn/dt = -ge_syn/taue : 1 (clock-driven)
+            I_synE_post = ge_syn * nS * (Ee - v) : amp (summed)'''
 
         return S
 
     def onpre(self):
-        on_pre='''ge += w_syn
+        on_pre='''ge_syn += w_syn
                 Apre += dApre
                 w_syn = clip(w_syn + Apost, 0, g_syn)'''
         return on_pre
@@ -522,7 +540,9 @@ class s_lifSTDP_ex:
                     dApre = self.dApre,
                     dApost = self.dApost,
                     taupre = self.taupre,
-                    taupost = self.taupost)
+                    taupost = self.taupost,
+                    taue = self.taue,
+                    Ee = self.Ee)
 
     def method(self):
         return 'rk4'
@@ -548,7 +568,7 @@ class s_glu_ex:
     def __init__(self, conduct):
         self.g_syn = conduct
         return
-        
+
     def eqs(self):
         syn =   '''
                 gNt: siemens/meter**2
@@ -562,7 +582,7 @@ class s_glu_ex:
 
     def onpost(self):
         return None
-        
+
     def namespace(self):
         return dict(E_glu = self.E_glu,
                     alphaR = self.alphaR,
@@ -594,7 +614,7 @@ class s_GABA_inh:
     def __init__(self, conduct):
         self.g_syn = conduct
         return
-        
+
     def eqs(self):
         syn =   '''
                 gNt: siemens/meter**2
@@ -608,7 +628,7 @@ class s_GABA_inh:
 
     def onpost(self):
         return None
-        
+
     def namespace(self):
         return dict(E_gaba = self.E_gaba,
                     alphaR = self.alphaR,
@@ -626,5 +646,3 @@ class s_GABA_inh:
     def init_cond(self):
         return {'gNt': self.g_syn,
                 'r': 'rand()'}
-
-

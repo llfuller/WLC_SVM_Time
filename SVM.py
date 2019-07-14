@@ -22,7 +22,7 @@ te_prefix = 'data_dev/test_'
 #Antennal Lobe parameters
 al_para = dict(N = N_AL,
                g_syn = in_AL,
-               neuron_class = nm.n_FitzHugh_Nagumo, 
+               neuron_class = nm.n_FitzHugh_Nagumo,
                syn_class = nm.s_FitzHughNagumo_inh,
                PAL = PAL,
                mon = ['V']
@@ -67,7 +67,7 @@ states = dict(  G_AL = G_AL,
                 S_AL = S_AL,
                 trace_AL = trace_AL,
                 spikes_AL = spikes_AL)
- 
+
 
 run_params_test = dict( num_odors = num_odors,
                         num_trials = num_test,
@@ -78,8 +78,8 @@ run_params_test = dict( num_odors = num_odors,
                         N_AL = N_AL,
                         train = False)
 
-# ex.createData(run_params_train, I_arr, states, net)
-# ex.createData(run_params_test, I_arr, states, net)
+ex.createData(run_params_train, I_arr, states, net)
+ex.createData(run_params_test, I_arr, states, net)
 
 spikes_t_arr, spikes_i_arr, I_arr, trace_V_arr, trace_t_arr, label_arr = anal.load_data(tr_prefix, num_runs = num_odors*num_train)
 spikes_t_test_arr, spikes_i_test_arr, I_test_arr, test_V_arr, test_t_arr, label_test_arr = anal.load_data(te_prefix, num_runs = num_odors*num_test)
@@ -115,7 +115,7 @@ predicted = np.array(pred_arr)
 
 print("Classification report for classifier %s:\n%s\n"
       % (clf, metrics.classification_report(expected, predicted)))
-      
+
 cm = metrics.confusion_matrix(expected, predicted)
 print("Confusion matrix:\n%s" % cm)
 
@@ -132,7 +132,3 @@ print("Accuracy={}".format(metrics.accuracy_score(expected, predicted)))
 # title = 'Testing Arbitrary Input with Noise ' + str(np.rint(100*noise_test/sqrt(3)))+'%'
 # name = 'testing_AI.pdf'
 # anal.plotSVM(clf, test_data, label_test_arr, title, name)
-
-
-
-

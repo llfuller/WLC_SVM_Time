@@ -1,7 +1,13 @@
 import numpy as np
 import os.path
 from struct import unpack
-import cPickle as pickle
+import sys
+
+if sys.version_info[0] < 3:
+    import cPickle as pickle
+else:
+    import pickle
+
 import brian2.only as br
 from sklearn.utils import shuffle as rshuffle
 
@@ -70,7 +76,7 @@ def runMNIST(run_params, imgs, states, net):
             net.restore()
             print('image: ' + str(n))
             print('label: '+ str(labels[i][0]))
-            
+
             #right now creating binary image
             rates = rates = np.where(imgs[i%60000,:,:] > bin_thresh, 1, 0)*inp
 
@@ -83,7 +89,7 @@ def runMNIST(run_params, imgs, states, net):
             print(np.sum(I/inp))
 
             G_AL.I_inj = br.nA*I
-            
+
             net.run(run_time*br.ms, report = 'text')
 
             np.save(prefix+'spikes_t_'+str(n) ,spikes_AL.t)
@@ -111,7 +117,7 @@ def get_rand_I(N, p, I_inp):
 
 
 '''
-MNIST helper function to load and unpack MNIST data.  To run you need to download 
+MNIST helper function to load and unpack MNIST data.  To run you need to download
 the MNIST dataset from http://yann.lecun.com/exdb/mnist/.
 
 picklename: name of file to write/read data from

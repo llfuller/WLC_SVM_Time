@@ -12,7 +12,7 @@ import brian2.only as br
 from sklearn.utils import shuffle as rshuffle
 
 
-def createData(run_params, I_arr, states, net):
+def createData(run_params, I_arr, states, net, t_array = None):
     num_odors = run_params['num_odors']
     num_trials = run_params['num_trials']
     prefix = run_params['prefix']
@@ -25,6 +25,8 @@ def createData(run_params, I_arr, states, net):
     G_AL = states['G_AL']
     spikes_AL = states['spikes_AL']
     trace_AL = states['trace_AL']
+
+
 
     n = 0 #Counting index
     start = 100 #skip the first start*dt ms to remove transients
@@ -39,7 +41,6 @@ def createData(run_params, I_arr, states, net):
                 G_AL.I_inj = I_arr[j]+noise*inp*(2*np.random.random(N_AL)-1)*br.nA
 
             net.run(run_time, report = 'text')
-
             np.save(prefix+'spikes_t_'+str(n) ,spikes_AL.t)
             np.save(prefix+'spikes_i_'+str(n) ,spikes_AL.i)
             np.save(prefix+'I_'+str(n), G_AL.I_inj)
@@ -48,6 +49,7 @@ def createData(run_params, I_arr, states, net):
 
             np.save(prefix+'labels_'+str(n), np.ones(len(trace_AL.t[start:]))*j)
             n = n+1
+
 
 
 def runMNIST(run_params, imgs, states, net):

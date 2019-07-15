@@ -33,7 +33,7 @@ al_para = dict(N = N_AL,
 net = Network()
 
 G_AL, S_AL, trace_AL, spikes_AL = lm.get_AL(al_para, net)
-
+G_AL.active_ = 1
 net.store()
 
 inp = 0.15

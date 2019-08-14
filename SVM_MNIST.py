@@ -2,8 +2,11 @@ from __future__ import division
 
 import numpy as np
 import matplotlib.pyplot as plt
-import cPickle as pickle
-
+import sys
+if sys.version_info[0] == 2:
+    import cPickle as pickle
+else:
+    import pickle
 import neuron_models as nm
 import lab_manager as lm
 import experiments as ex
@@ -18,12 +21,12 @@ from brian2 import *
 
 start_scope()
 #path to the data folder
-MNIST_data_path = '/Users/Jason/Desktop/Mothnet/MNIST_data/'
+MNIST_data_path = 'data_set/MNIST/'
 # MNIST_data_path = '/home/jplatt/Mothnet/MNIST_data/'
 
 #path to folder to save data
-tr_prefix = 'data/'
-te_prefix = 'data/test_'
+tr_prefix = 'data_mnist/'
+te_prefix = 'data_mnist/test_'
 
 #doesn't work if timestep > 0.05ms
 defaultclock.dt = .05*ms
@@ -35,8 +38,9 @@ numbers_to_inc = frozenset([0, 3])
 N_AL = 784 #must be >= 784
 
 num_odors = len(numbers_to_inc)
-num_train = 1
-num_test = 1
+# per odor
+num_train = 10
+num_test = 5
 """
 Amount of inhibition between AL Neurons.
 Enforces WLC dynamics and needs to be scaled

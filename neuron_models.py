@@ -66,10 +66,12 @@ class n_FitzHugh_Nagumo:
                     I_inj : amp
                     I_synI : 1
                     I_synE : 1
-                    dV/dt = (V-(V**3)/(3*mV**2) - w - z*(V - nu) + I_synE*mV + 0.35*mV + I_inj*active*Mohm)/t1 : volt
+                    dV/dt = (V-(V**3)/(3*mV**2) - w - z*(V - nu) + I_synE*mV + 0.35*mV + I_inj*scale*Mohm + I_noise*Mohm)/t1 : volt
                     dw/dt = (V - b*w + a*mV)/ms : volt
                     dz/dt = (I_synI - z)/t2 : 1
-                    active : 1
+                    scale : 1
+                    td : 1
+                    I_noise : amp
                     '''
         return eqns_AL
 

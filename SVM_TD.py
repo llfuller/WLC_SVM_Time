@@ -12,7 +12,6 @@ from sklearn import metrics
 
 defaultclock.dt = .05*ms
 
-np.random.seed(22)
 
 N_AL = 1000
 in_AL = .1
@@ -48,35 +47,50 @@ net = Network()
 G_AL, S_AL, trace_AL, spikes_AL = lm.get_AL(al_para, net)
 
 # Make Timed Array
-t_array = TimedArray(data[:int(200/0.02)], dt = 0.02*ms)
+# Different waveforms for different odors
+
+n_waveforms = 10
+
+t_array = []
+for j in range(n_waveforms):
+    tmp = TimedArray(data[int(j*250/0.02):int((j*250 + 150)/0.02)], dt = 0.02*ms)
+    t_array.append(tmp)
 
 # If using the function createData, must be named t_array
-G_run = G_AL.run_regularly('active = t_array(t)')
-net.add(G_run)
+trace_current = StateMonitor(G_AL,['I_inj','I_noise', 'scale'],record = True)
+net.add(trace_current)
+#G_AL.td = np.random.uniform(low = 0, high = 30, size =N_AL)
+G_AL.td = 0
 net.store()
 
 inp = 0.15
-noise_amp = 0.1 #max noise percentage of inp
-noise_test = 0.8
+noise_amp = 0.1 #max noise as a fraction of inp
+noise_test = 0.1
 
-num_odors = 10
+# Different spatial injections
+sp_odors = 1
 
-num_train = 1
+num_odors = int(sp_odors*n_waveforms)
 
-num_test = 2
+num_train = 5
+
+num_test = 1
 
 run_time = 80*ms
 
 I_arr = []
 #create the base odors
-for i in range(num_odors):
-    I = ex.get_rand_I(N_AL, p = np.random.uniform(0.1, 0.5), I_inp = inp)*nA
+for i in range(sp_odors):
+    I = ex.get_rand_I(N_AL, p = np.random.uniform(0.1, 0.5), I_inp = 1)
     I_arr.append(I)
 
+
 run_params_train = dict(num_odors = num_odors,
+                        n_waveforms = n_waveforms,
+                        sp_odors  = sp_odors,
                         num_trials = num_train,
                         prefix = tr_prefix,
-                        inp = inp,
+                        inp = inp*nA,
                         noise_amp = noise_amp,
                         run_time = run_time,
                         N_AL = N_AL,
@@ -86,27 +100,31 @@ run_params_train = dict(num_odors = num_odors,
 states = dict(  G_AL = G_AL,
                 S_AL = S_AL,
                 trace_AL = trace_AL,
-                spikes_AL = spikes_AL)
+                spikes_AL = spikes_AL,
+                trace_current = trace_current)
 
 
 run_params_test = dict( num_odors = num_odors,
+                        n_waveforms = n_waveforms,
+                        sp_odors = sp_odors,
                         num_trials = num_test,
                         prefix = te_prefix,
-                        inp = inp,
+                        inp = inp*nA,
                         noise_amp = noise_test,
                         run_time = run_time,
                         N_AL = N_AL,
                         train = False)
 
 # Run to create training and test data
-#ex.createData(run_params_train, I_arr, states, net, t_array=t_array)
-#ex.createData(run_params_test, I_arr, states, net,t_array=t_array)
+ex.createDataTD(run_params_train, I_arr, states, net, t_array=t_array)
+ex.createDataTD(run_params_test, I_arr, states, net, t_array=t_array)
+
 
 spikes_t_arr, spikes_i_arr, I_arr, trace_V_arr, trace_t_arr, label_arr = anal.load_data(tr_prefix, num_runs = num_odors*num_train)
 spikes_t_test_arr, spikes_i_test_arr, I_test_arr, test_V_arr, test_t_arr, label_test_arr = anal.load_data(te_prefix, num_runs = num_odors*num_test)
 
 # uncomment to do PCA
-#pca_dim = 20
+#pca_dim = 2
 #pca_arr, PCA = anal.doPCA(trace_V_arr, k = pca_dim)
 
 #print(pca_arr[0])
@@ -149,8 +167,10 @@ print("Confusion matrix:\n%s" % cm)
 
 # anal.plot_confusion_matrix(cm)
 
-print("Accuracy={}".format(metrics.accuracy_score(expected, predicted)))
 
+# Only works if pca_dim = 2
+print("Accuracy={}".format(metrics.accuracy_score(expected, predicted)))
+#
 # title = 'Arbitrary Input Training'
 # name = 'training.pdf'
 # anal.plotPCA2D(pca_arr, title, name, num_train, skip = 2)

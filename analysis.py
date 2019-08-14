@@ -1,4 +1,4 @@
-# from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import PCA
 from sklearn.metrics import mutual_info_score
 import numpy as np
@@ -66,8 +66,8 @@ def learnSVM(X, y, K = 'linear'):
     if K == 'linear':
         clf = LinearSVC(C = 0.4, max_iter=100000, verbose = True)
     else:
-        clf = SVC(kernel=K, verbose = True, C = 0.6, gamma = 8.0)  
-    
+        clf = SVC(kernel=K, verbose = True, C = 0.6, gamma = 8.0)
+
     clf.fit(X, y)
 
     return clf
@@ -100,45 +100,160 @@ def plotSVM(clf, X, Y, title, name):
     plt.show()
 
 def plotPCA2D(pca_arr, title, name, num_trials, skip = 1):
-    marker = cycle(['^','o','s','p'])
-    cycol = cycle(['y', 'b', 'r'])
-    m = next(marker)
-    c = next(cycol)
+    #marker = cycle(['^','o','s','p'])
+    #cycol = cycle(['y', 'blue', 'r', 'cyan', 'm', 'g','lime','darkcyan','orange','midnightblue'])
+    #m = next(marker)
+    #c = next(cycol)
+    fig,ax = plt.subplots(figsize=(10,7))
 
     for i in range(len(pca_arr)):
         d = pca_arr[i]
-        m = next(marker)
+        #c = next(cycol)
         if i%num_trials != 0:
             plt.plot(d[0][::skip], d[1][::skip],
-             		 '.',
-              		 marker = m,
-            		 color = c)
+             		 '.'#,
+              		 #marker = m,
+            		 #color = c
+                     )
         if i%num_trials == 0:
-            c = next(cycol)
-            marker = cycle(['^','o','s','p'])
-            m = next(marker)
-            plt.plot(d[0][::skip], d[1][::skip],
+            #m = next(marker)
+            ax.plot(d[0][::skip], d[1][::skip],
                      '.',
-                     marker = m,
-                     color = c,
-                     alpha = 0.4,
+                     #marker = m,
+                     #color = c,
+                     alpha = 0.5,
                      label = 'base odor '+str((i+num_trials)/num_trials))
-
-
+    ax.grid(False)
     plt.legend()
-    plt.xticks([])
-    plt.yticks([])
-    plt.tight_layout()
     plt.title(title, fontsize = 22)
-
+    ax.set_yticklabels([])
+    ax.set_xticklabels([])
     plt.savefig(name, bbox_inches = 'tight')
     plt.show()
+
+def getMIM(trace_V_arr):
+    #Information component analysis
+    # length = len(trace_V_arr[0][0])
+    data = np.hstack(trace_V_arr).T
+    N = np.shape(data)[1]
+
+    bins = int(np.round(np.log2(N)+1)) #Sturges' formula
+    matMI = np.zeros((N, N))
+
+    for ix in np.arange(N):
+        if ix%10 == 0: print(ix)
+        for jx in np.arange(ix,N):
+            matMI[ix,jx] = calc_MI(data[:,ix], data[:,jx], bins)
+            #symmetric matrix
+            matMI[jx, ix] = matMI[ix,jx]
+
+    np.save('MIM',matMI)
+
+def doInCA(MIM, data, length, num_odors, skip, k = 3):
+    # k is the number of dimensions
+    w,v = np.linalg.eig(MIM)
+
+    vk = v[:, :k]
+    # # Save the InCA data into each odor/conc
+    Xk = vk.T.dot(data.T).T[::skip]
+    InCAData = []
+    # num_odors?
+    for i in range(num_odors):
+        InCAData.append(Xk[i*length:(i+1)*length])
+
+    return InCAData
+
+def plotInCA3D(InCAData, N, title, name, start = 400):
+
+    # cycol = cycle(['#f10c45','#069af3','#02590f','#ab33ff','#ff8c00','#ffd700'])
+    # marker = cycle(['^','o','s','p'])
+
+
+    fig = plt.figure(figsize = (10,7))
+    ax = fig.gca(projection='3d')
+    # c = next(cycol)
+    # m = next(marker)
+
+    # Turn off tick labels
+    ax.set_yticklabels([])
+    ax.set_xticklabels([])
+    ax.set_zticklabels([])
+
+    ax.grid(False)
+
+
+    for j in range(len(InCAData)):
+        ax.scatter(InCAData[j][start:,0], InCAData[j][start:,1], InCAData[j][start:,2],
+                   s=10#,
+                   # color = c,
+                   # marker = m
+                   )
+        # c = next(cycol)
+        # m = next(marker)
+
+    plt.title(title, fontsize = 22)
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
+    ax.view_init(0, 0)
+    # plt.tight_layout()
+    plt.show()
+    ax.figure.savefig(name, bbox_inches = 'tight')
+
+
+def plotInCA2D(InCAData, N, title, name, start = 400,x_bounds = None, y_bounds = None):
+    '''
+    Currently, this creates a pretty bad image -- used 0, 2
+    '''
+    #marker = cycle(['^','o','s','p'])
+    #ycol = cycle(['yellow', 'blue', 'red', 'cyan', 'm', 'g','lime','darkcyan','orange','midnightblue'])
+    #m = next(marker)
+    #c = next(cycol)
+
+
+    fig,ax = plt.subplots(figsize = (10,7))
+    # c = next(cycol)
+    # m = next(marker)
+
+    # Turn off tick labels
+    ax.set_yticklabels([])
+    ax.set_xticklabels([])
+
+    ax.grid(False)
+
+
+    for j in range(len(InCAData)):
+        ax.scatter(InCAData[j][start:,0], InCAData[j][start:,2],
+                   s=10,
+                   #color = c,
+                   #marker = m
+                   alpha = 0.5,
+                   label = 'base odor '+str(j)
+                   )
+        #c = next(cycol)
+        # m = next(marker)
+
+    if x_bounds is not None:
+        ax.set_xlim(x_bounds)
+    if y_bounds is not None:
+        ax.set_ylim(y_bounds)
+
+    plt.legend()
+    plt.title(title, fontsize = 22)
+    # plt.tight_layout()
+    plt.show()
+    ax.figure.savefig(name, bbox_inches = 'tight')
+
+def calc_MI(X, Y, bins):
+    c_xy = np.histogram2d(X, Y, bins)[0]
+    MI = mutual_info_score(None, None, contingency=c_xy)
+    return MI
 
 
 def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
     """
-    Plots confusion matrix, 
-    
+    Plots confusion matrix,
+
     cm - confusion matrix
     """
     plt.figure(1, figsize=(15, 12), dpi=160)
@@ -149,4 +264,4 @@ def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
 
-    plt.show()  
+    plt.show()

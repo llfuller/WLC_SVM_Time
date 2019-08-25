@@ -23,11 +23,43 @@ def load_data(prefix, num_runs):
         spikes_t_arr.append(np.load(prefix+'spikes_t_'+str(i)+'.npy'))
         spikes_i_arr.append(np.load(prefix+'spikes_i_'+str(i)+'.npy'))
         I_arr.append(np.load(prefix+'I_'+str(i)+'.npy'))
-        trace_V_arr.append(np.load(prefix+'trace_V_'+str(i)+'.npy'))
+        # temporary to make sure all files have the same number of points
+        trace = np.load(prefix+'trace_V_'+str(i)+'.npy')
+        if np.shape(trace)[1] == 50000:
+            trace = trace[:,100:]
+
+        trace_V_arr.append(trace)
+
+        #trace_V_arr.append(np.load(prefix+'trace_V_'+str(i)+'.npy'))
         trace_t_arr.append(np.load(prefix+'trace_t_'+str(i)+'.npy'))
-        labels_arr.append(np.load(prefix+'labels_'+str(i)+'.npy'))
+        labels = np.load(prefix+'labels_'+str(i)+'.npy')
+        # temporary
+        if len(labels == 50000):
+            labels = labels[100:]
+        labels_arr.append(labels)
+        #labels_arr.append(np.load(prefix+'labels_'+str(i)+'.npy'))
 
     return spikes_t_arr, spikes_i_arr, I_arr, trace_V_arr, trace_t_arr, labels_arr
+
+def load_data_limited(prefix, num_runs):
+    trace_V_arr = []
+    labels_arr = []
+    for i in range(num_runs):
+        # temporary to make sure all files have the same number of points
+        trace = np.load(prefix+'trace_V_'+str(i)+'.npy')
+        if np.shape(trace)[1] == 50000:
+            trace = trace[:,100:]
+        trace_V_arr.append(trace)
+
+        labels = np.load(prefix+'labels_'+str(i)+'.npy')
+        if len(labels == 50000):
+            labels = labels[100:]
+        labels_arr.append(labels)
+
+        #trace_V_arr.append(np.load(prefix+'trace_V_'+str(i)+'.npy'))
+        #labels_arr.append(np.load(prefix+'labels_'+str(i)+'.npy'))
+
+    return trace_V_arr, labels_arr
 
 def doPCA(trace_V_arr, k = 3):
 

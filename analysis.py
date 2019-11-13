@@ -23,41 +23,34 @@ def load_data(prefix, num_runs):
         spikes_t_arr.append(np.load(prefix+'spikes_t_'+str(i)+'.npy'))
         spikes_i_arr.append(np.load(prefix+'spikes_i_'+str(i)+'.npy'))
         I_arr.append(np.load(prefix+'I_'+str(i)+'.npy'))
-        # temporary to make sure all files have the same number of points
-        trace = np.load(prefix+'trace_V_'+str(i)+'.npy')
-        if np.shape(trace)[1] == 50000:
-            trace = trace[:,100:]
 
-        trace_V_arr.append(trace)
-
-        #trace_V_arr.append(np.load(prefix+'trace_V_'+str(i)+'.npy'))
+        trace_V_arr.append(np.load(prefix+'trace_V_'+str(i)+'.npy'))
         trace_t_arr.append(np.load(prefix+'trace_t_'+str(i)+'.npy'))
-        labels = np.load(prefix+'labels_'+str(i)+'.npy')
-        # temporary
-        if len(labels == 50000):
-            labels = labels[100:]
-        labels_arr.append(labels)
-        #labels_arr.append(np.load(prefix+'labels_'+str(i)+'.npy'))
+        #labels = np.load(prefix+'labels_'+str(i)+'.npy')
+        #labels_arr.append(labels)
+        labels_arr.append(np.load(prefix+'labels_'+str(i)+'.npy'))
 
     return spikes_t_arr, spikes_i_arr, I_arr, trace_V_arr, trace_t_arr, labels_arr
 
-def load_data_limited(prefix, num_runs):
+def load_data_limited(prefix, num_runs, **kwargs):
+
+    start_run = kwargs.get('start_run',0)
+    print(start_run)
+    skip = kwargs.get('skip',1)
+    start_skip = kwargs.get('start_skip',0)
+    #end_skip = kwargs.get('end_skip',1)
+
     trace_V_arr = []
     labels_arr = []
-    for i in range(num_runs):
-        # temporary to make sure all files have the same number of points
-        trace = np.load(prefix+'trace_V_'+str(i)+'.npy')
-        if np.shape(trace)[1] == 50000:
-            trace = trace[:,100:]
-        trace_V_arr.append(trace)
+    for i in range(start_run,start_run+num_runs):
+        tmp = np.load(prefix+'trace_V_'+str(i)+'.npy')
+        tmp = tmp[:,start_skip:]
+        trace_V_arr.append(tmp)
 
-        labels = np.load(prefix+'labels_'+str(i)+'.npy')
-        if len(labels == 50000):
-            labels = labels[100:]
-        labels_arr.append(labels)
-
-        #trace_V_arr.append(np.load(prefix+'trace_V_'+str(i)+'.npy'))
-        #labels_arr.append(np.load(prefix+'labels_'+str(i)+'.npy'))
+        tmp = np.load(prefix+'labels_'+str(i)+'.npy')
+        tmp = tmp[start_skip:]
+        labels_arr.append(tmp)
+    print(np.shape(trace_V_arr))
 
     return trace_V_arr, labels_arr
 

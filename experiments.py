@@ -41,6 +41,7 @@ def createData(run_params, I_arr, states, net, t_array=None,**kwargs):
 
 
     n = 0 #Counting index
+
     for j in range(num_odors):
         for k in range(num_trials):
             noise = noise_amp#*np.random.randn()
@@ -182,6 +183,30 @@ def runMNIST(run_params, imgs, states, net):
             break
 
 
+'''
+returns balanced binary MNIST datasets for num_train objects per class
+'''
+def get_bin_MNIST(imgs, labels, num_train, bin_thresh):
+
+    X_train = []
+    y_train = []
+
+    num_run = {}
+    for i in range(10):
+        num_run[i] = 0
+    for i in range(60000):
+        y = labels[i][0]
+        if num_run[y] < num_train:
+            rates = np.where(imgs[i%60000,:,:] > bin_thresh, 1, 0)
+            linear = np.ravel(rates)
+            num_run[y] = num_run[y]+1
+            X_train.append(linear)
+            y_train.append(y)
+
+        if all(value == num_train for value in num_run.values()):
+            break
+
+    return [np.array(X_train), np.array(y_train)]
 '''
 Random constant current input
 N: size of array

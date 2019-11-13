@@ -17,17 +17,21 @@ N_AL = 1000
 in_AL = .1
 PAL = 0.5
 
-tr_prefix = 'data_dev/'
-te_prefix = 'data_dev/test_'
+# Need to create folders before running
+tr_prefix = 'data_dev/td_data/base/'
+te_prefix = 'data_dev/td_data/test/test_'
 
 # Data Path for pre-designed currents
-data_path = 'data_set/designed_currents/'
+data_path = 'source_data/designed_currents/'
 data_file = 'current.dat'
+
+# dt of the source file
+dt = 0.02 # ms
 
 # Loading Data file
 data = np.loadtxt(data_path + data_file)
 
-# Renormalizing 0 - 1 (unecessary)
+# Renormalizing 0 - 1
 data = (data - np.min(data))/(np.max(data)-np.min(data))
 
 
@@ -47,41 +51,43 @@ net = Network()
 G_AL, S_AL, trace_AL, spikes_AL = lm.get_AL(al_para, net)
 
 # Make Timed Array
-# Different waveforms for different odors
-
-n_waveforms = 10
+# Different time dependent waveforms for different odors
+n_waveforms = 5
 
 t_array = []
 for j in range(n_waveforms):
-    tmp = TimedArray(data[int(j*250/0.02):int((j*250 + 150)/0.02)], dt = 0.02*ms)
+    # Make multiple waveforms from one stimulated current by sampling
+    # every 250 ms, creating waveform length of 150 ms
+    tmp = TimedArray(data[int(j*250/dt):int((j*250 + 150)/dt)], dt = dt*ms)
     t_array.append(tmp)
 
 # If using the function createData, must be named t_array
 trace_current = StateMonitor(G_AL,['I_inj','I_noise', 'scale'],record = True)
 net.add(trace_current)
+
+# Can crease a random time delay between neurons so the current waveform is
+# slightly shifted
 #G_AL.td = np.random.uniform(low = 0, high = 30, size =N_AL)
 G_AL.td = 0
 net.store()
 
-inp = 0.15
+# current settings
+inp = 1.0
 noise_amp = 0.1 #max noise as a fraction of inp
 noise_test = 0.1
 
 # Different spatial injections
 sp_odors = 1
-
 num_odors = int(sp_odors*n_waveforms)
-
 num_train = 5
-
 num_test = 1
 
-run_time = 80*ms
+run_time = 100*ms
 
 I_arr = []
 #create the base odors
 for i in range(sp_odors):
-    I = ex.get_rand_I(N_AL, p = np.random.uniform(0.1, 0.5), I_inp = 1)
+    I = ex.get_rand_I(N_AL, p = np.random.uniform(0.1, 0.5), I_inp = inp)
     I_arr.append(I)
 
 

@@ -192,29 +192,6 @@ print("Confusion matrix:\n%s" % cm)
 
 print("Accuracy={}".format(metrics.accuracy_score(y_test, pred_arr)))
 
-'''
-print('Poly SVM...')
-clf = anal.learnSVM(X, y, K='poly')
-
-#check predictions on the test data
-pred_arr = []
-for i in range(len(test_V_arr)):
-    pred = clf.predict(test_V_arr[i].T)
-    total_pred = stats.mode(pred)[0]
-    print('True: ' + str(y_test[i]), 'pred: ' + str(int(total_pred)))
-    pred_arr.append(total_pred)
-
-expected = y_test
-predicted = np.array(pred_arr)
-
-print("Classification report for classifier %s:\n%s\n"
-      % (clf, metrics.classification_report(expected, predicted)))
-
-cm = metrics.confusion_matrix(expected, predicted)
-print("Confusion matrix:\n%s" % cm)
-
-print("Accuracy={}".format(metrics.accuracy_score(expected, predicted)))
-#'''
 #----------------------------------------------------------------------
 #Plotting
 

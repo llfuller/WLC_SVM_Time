@@ -260,9 +260,9 @@ class n_HH:
     def eqs(self):
         eqns_AL = '''
                     dV/dt = -1/C_m*(g_L*(V - E_L) + g_Na*m**3*h*(V - E_Na) \
-                            + g_K*n**4*(V - E_K) - I_inj*active + I_syn): volt
+                            + g_K*n**4*(V - E_K) - I_inj*scale + I_syn): volt
                     I_inj: amp/meter**2
-                    active: 1
+                    scale: 1
                     I_syn: amp/meter**2
                     dm/dt = (xm-m)/tm : 1
                     xm = 0.5*(1+tanh((V - vm)/dvm)) : 1

@@ -6,11 +6,12 @@ import experiments as ex
 import analysis as anal
 
 from scipy.stats import mode
+import pickle
 
 import matplotlib.pyplot as plt
 from sklearn import metrics
 
-defaultclock.dt = .05*ms
+defaultclock.dt = .04*ms
 
 
 N_AL = 1000
@@ -20,6 +21,7 @@ PAL = 0.5
 # Need to create folders before running
 tr_prefix = 'data_dev/td_data/base/'
 te_prefix = 'data_dev/td_data/test/test_'
+save_prefix = 'data_dev/td_data/'
 
 # Data Path for pre-designed currents
 data_path = 'source_data/designed_currents/'
@@ -52,7 +54,7 @@ G_AL, S_AL, trace_AL, spikes_AL = lm.get_AL(al_para, net)
 
 # Make Timed Array
 # Different time dependent waveforms for different odors
-n_waveforms = 5
+n_waveforms = 6
 
 t_array = []
 for j in range(n_waveforms):
@@ -73,13 +75,13 @@ net.store()
 
 # current settings
 inp = 1.0
-noise_amp = 0.1 #max noise as a fraction of inp
-noise_test = 0.1
+noise_amp = 0.1*np.sqrt(3) #max noise as a fraction of inp
+noise_test = 0.1*np.sqrt(3)
 
 # Different spatial injections
 sp_odors = 1
 num_odors = int(sp_odors*n_waveforms)
-num_train = 5
+num_train = 1
 num_test = 1
 
 run_time = 100*ms
@@ -87,7 +89,7 @@ run_time = 100*ms
 I_arr = []
 #create the base odors
 for i in range(sp_odors):
-    I = ex.get_rand_I(N_AL, p = np.random.uniform(0.1, 0.5), I_inp = inp)
+    I = ex.get_rand_I(N_AL, p =1./3., I_inp = inp)
     I_arr.append(I)
 
 
@@ -143,11 +145,20 @@ maxi = np.max(X)
 X = anal.normalize(X, mini, maxi)
 y = np.hstack(label_arr)
 
+trace_V_arr = None
+mini = np.append(mini,maxi)
+np.save(tr_prefix + 'mini_maxi_%d.npy'%n_waveforms,mini)
+
 clf = anal.learnSVM(X, y)
+
+
+pickle_file = open('trained_svm_%d.pickle'%n_waveforms,'wb')
+pickle.dump(clf,pickle_file)
+pickle_file.close()
 
 #test_data = anal.applyPCA(PCA, test_V_arr)
 test_data = test_V_arr
-test_data = anal.normalize(test_data, mini, maxi)
+test_data = anal.normalize(test_data, mini[0], mini[1])
 
 y_test = np.mean(label_test_arr, axis = 1)
 
@@ -163,19 +174,27 @@ for i in range(len(test_data)):
     pred_arr.append(total_pred)
 
 expected = y_test
-predicted = np.array(pred_arr)
+pred_arr = np.array(pred_arr)
+print(np.shape(pred_arr))
+#pred_arr = np.reshape(pred_arr, (pred_arr.shape[0],pred_arr.shape[1]))
 
-print("Classification report for classifier %s:\n%s\n"
-      % (clf, metrics.classification_report(expected, predicted)))
+print(pred_arr)
 
-cm = metrics.confusion_matrix(expected, predicted)
-print("Confusion matrix:\n%s" % cm)
+
+#print("Classification report for classifier %s:\n%s\n"
+#      % (clf, metrics.classification_report(expected, predicted)))
+
+#cm = metrics.confusion_matrix(expected, predicted)
+#print("Confusion matrix:\n%s" % cm)
 
 # anal.plot_confusion_matrix(cm)
 
 
 # Only works if pca_dim = 2
-print("Accuracy={}".format(metrics.accuracy_score(expected, predicted)))
+print("Accuracy={}".format(metrics.accuracy_score(expected, pred_arr)))
+f = open(save_prefix + 'acc','ab')
+np.savetxt(f,([n_waveforms,metrics.accuracy_score(expected, pred_arr)],),fmt='%d %.3f')
+f.close()
 #
 # title = 'Arbitrary Input Training'
 # name = 'training.pdf'

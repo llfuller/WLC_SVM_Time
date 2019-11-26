@@ -131,34 +131,37 @@ ex.createDataTD(run_params_test, I_arr, states, net, t_array=t_array)
 spikes_t_arr, spikes_i_arr, I_arr, trace_V_arr, trace_t_arr, label_arr = anal.load_data(tr_prefix, num_runs = num_odors*num_train)
 spikes_t_test_arr, spikes_i_test_arr, I_test_arr, test_V_arr, test_t_arr, label_test_arr = anal.load_data(te_prefix, num_runs = num_odors*num_test)
 
-# uncomment to do PCA
-#pca_dim = 2
-#pca_arr, PCA = anal.doPCA(trace_V_arr, k = pca_dim)
+pca = False
+if pca:
+    pca_dim = 2
+    pca_arr, PCA = anal.doPCA(trace_V_arr, k = pca_dim)
 
-#print(pca_arr[0])
-
-#X = np.hstack(pca_arr).T
-X = np.hstack(trace_V_arr).T
+    X = np.hstack(pca_arr).T
+else:
+    X = np.hstack(trace_V_arr).T
 
 mini = np.min(X)
 maxi = np.max(X)
 X = anal.normalize(X, mini, maxi)
+
 y = np.hstack(label_arr)
 
 trace_V_arr = None
-mini = np.append(mini,maxi)
-np.save(tr_prefix + 'mini_maxi_%d.npy'%n_waveforms,mini)
+
+# save min and max values for normalization
+#mini = np.append(mini,maxi)
+np.save(save_prefix + 'mini_maxi_%d.npy'%n_waveforms,[mini,maxi])
 
 clf = anal.learnSVM(X, y)
 
 
-pickle_file = open('trained_svm_%d.pickle'%n_waveforms,'wb')
+pickle_file = open(save_prefix+'trained_svm_%d.pickle'%n_waveforms,'wb')
 pickle.dump(clf,pickle_file)
 pickle_file.close()
 
 #test_data = anal.applyPCA(PCA, test_V_arr)
 test_data = test_V_arr
-test_data = anal.normalize(test_data, mini[0], mini[1])
+test_data = anal.normalize(test_data, mini, maxi)
 
 y_test = np.mean(label_test_arr, axis = 1)
 
@@ -175,11 +178,7 @@ for i in range(len(test_data)):
 
 expected = y_test
 pred_arr = np.array(pred_arr)
-print(np.shape(pred_arr))
 #pred_arr = np.reshape(pred_arr, (pred_arr.shape[0],pred_arr.shape[1]))
-
-print(pred_arr)
-
 
 #print("Classification report for classifier %s:\n%s\n"
 #      % (clf, metrics.classification_report(expected, predicted)))
@@ -190,12 +189,13 @@ print(pred_arr)
 # anal.plot_confusion_matrix(cm)
 
 
-# Only works if pca_dim = 2
 print("Accuracy={}".format(metrics.accuracy_score(expected, pred_arr)))
+
+# code to append file
 f = open(save_prefix + 'acc','ab')
 np.savetxt(f,([n_waveforms,metrics.accuracy_score(expected, pred_arr)],),fmt='%d %.3f')
 f.close()
-#
+
 # title = 'Arbitrary Input Training'
 # name = 'training.pdf'
 # anal.plotPCA2D(pca_arr, title, name, num_train, skip = 2)

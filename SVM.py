@@ -182,15 +182,16 @@ for i in range(len(test_data)):
     print('True: ' + str(y_test[i]), 'pred: ' + str(int(total_pred)))
     pred_arr.append(total_pred)
 
-pred_arr = np.array(pred_arr)
+expected = y_test
+predicted = np.array(pred_arr)
 
 print("Classification report for classifier %s:\n%s\n"
-      % (clf, metrics.classification_report(y_test, pred_arr)))
+      % (clf, metrics.classification_report(expected, predicted)))
 
-cm = metrics.confusion_matrix(y_test, pred_arr)
+cm = metrics.confusion_matrix(expected, predicted)
 print("Confusion matrix:\n%s" % cm)
 
-print("Accuracy={}".format(metrics.accuracy_score(y_test, pred_arr)))
+print("Accuracy={}".format(metrics.accuracy_score(expected, predicted)))
 
 #----------------------------------------------------------------------
 #Plotting

@@ -77,7 +77,6 @@ def createDataTD(run_params, I_arr, states, net, t_array = None, **kwargs):
     shift_odor_num = kwargs.get('shift_odor_num',0)
 
     num_odors = run_params['num_odors']
-    n_waveforms = run_params.get('n_waveforms',1)
     sp_odors = run_params.get('sp_odors', num_odors)
     num_trials = run_params['num_trials']
     prefix = run_params['prefix']
@@ -127,7 +126,7 @@ def createDataTD(run_params, I_arr, states, net, t_array = None, **kwargs):
             n = n+1
 
 def mixtures2(run_params, mix_arr, states, net, start = 100):
-    assert len(mix_arr) ==2, 'mix_arr must have length 2' 
+    assert len(mix_arr) ==2, 'mix_arr must have length 2'
 
     num_odors = run_params['num_odors']
     num_trials = run_params['num_trials']

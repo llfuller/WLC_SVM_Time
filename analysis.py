@@ -35,7 +35,6 @@ def load_data(prefix, num_runs):
 def load_data_limited(prefix, num_runs, **kwargs):
 
     start_run = kwargs.get('start_run',0)
-    print(start_run)
     skip = kwargs.get('skip',1)
     start_skip = kwargs.get('start_skip',0)
     #end_skip = kwargs.get('end_skip',1)
@@ -50,7 +49,6 @@ def load_data_limited(prefix, num_runs, **kwargs):
         tmp = np.load(prefix+'labels_'+str(i)+'.npy')
         tmp = tmp[start_skip:]
         labels_arr.append(tmp)
-    print(np.shape(trace_V_arr))
 
     return trace_V_arr, labels_arr
 

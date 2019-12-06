@@ -1,12 +1,31 @@
 import numpy as np
 import os.path
 from struct import unpack
-import cPickle as pickle
-import brian2.only as br
+import sys
+
+if sys.version_info[0] < 3:
+    import cPickle as pickle
+else:
+    import pickle
+
+from brian2.only import *
 from sklearn.utils import shuffle as rshuffle
 
 
-def createData(run_params, I_arr, states, net, start = 100):
+def createData(run_params, I_arr, states, net, t_array=None,**kwargs):
+    '''
+    t_array: TimeArray object, must specify a run_regularly function in
+    run script
+
+    kwargs:
+        start_number: An number used to shift the number in the save files
+        start_skip: The number of data points to skip when saving
+        shift_odor_num: shifts the odor number that is saved to labels file
+    '''
+    start_number = kwargs.get('start_number',0)
+    start_skip = kwargs.get('start_skip',0)
+    shift_odor_num = kwargs.get('shift_odor_num',0)
+
     num_odors = run_params['num_odors']
     num_trials = run_params['num_trials']
     prefix = run_params['prefix']
@@ -20,6 +39,7 @@ def createData(run_params, I_arr, states, net, start = 100):
     spikes_AL = states['spikes_AL']
     trace_AL = states['trace_AL']
 
+
     n = 0 #Counting index
 
     for j in range(num_odors):
@@ -30,22 +50,83 @@ def createData(run_params, I_arr, states, net, start = 100):
             if k == 0 and train:
                 G_AL.I_inj = I_arr[j]
             else:
-                G_AL.I_inj = I_arr[j]+noise*inp*(2*np.random.random(N_AL)-1)*br.nA
+                G_AL.I_inj = I_arr[j]+noise*inp*(2*np.random.random(N_AL)-1)*nA
 
             net.run(run_time, report = 'text')
+            np.save(prefix+'spikes_t_'+str(n+start_number) ,spikes_AL.t)
+            np.save(prefix+'spikes_i_'+str(n+start_number) ,spikes_AL.i)
+            np.save(prefix+'I_'+str(n+start_number), G_AL.I_inj)
+            np.save(prefix+'trace_V_'+str(n+start_number), trace_AL.V[:,start_skip:])
+            np.save(prefix+'trace_t_'+str(n+start_number), trace_AL.t[start_skip:])
 
-            np.save(prefix+'spikes_t_'+str(n) ,spikes_AL.t)
-            np.save(prefix+'spikes_i_'+str(n) ,spikes_AL.i)
-            np.save(prefix+'I_'+str(n), G_AL.I_inj)
-            np.save(prefix+'trace_V_'+str(n), trace_AL.V[:,start:])
-            np.save(prefix+'trace_t_'+str(n), trace_AL.t[start:])
-
-            np.save(prefix+'labels_'+str(n), np.ones(len(trace_AL.t[start:]))*j)
+            np.save(prefix+'labels_'+str(n+start_number), np.ones(len(trace_AL.t[start_skip:]))*(j+shift_odor_num))
             n = n+1
 
+def createDataTD(run_params, I_arr, states, net, t_array = None, **kwargs):
+    '''
+    t_array: TimeArray object, must specify a run_regularly function in
+    run script
+
+    kwargs:
+        start_number: An number used to shift the number in the save files
+        start_skip: The number of data points to skip when saving
+        shift_odor_num: shifts the odor number that is saved to labels file
+    '''
+    start_number = kwargs.get('start_number',0)
+    start_skip = kwargs.get('start_skip',0)
+    shift_odor_num = kwargs.get('shift_odor_num',0)
+
+    num_odors = run_params['num_odors']
+    sp_odors = run_params.get('sp_odors', num_odors)
+    num_trials = run_params['num_trials']
+    prefix = run_params['prefix']
+    inp = run_params['inp']
+    noise_amp = run_params['noise_amp']
+    run_time = run_params['run_time']
+    N_AL = run_params['N_AL']
+    train = run_params['train']
+
+    G_AL = states['G_AL']
+    spikes_AL = states['spikes_AL']
+    trace_AL = states['trace_AL']
+    trace_current = states['trace_current']
+    net.restore()
+    m_arrays = t_array
+    G_run = G_AL.run_regularly('''I_inj = inp*t_array(t+td*ms)''')
+    G_noise = G_AL.run_regularly('''I_noise = inp*noise*(2*rand() - 1)''')
+    net.add(G_run,G_noise)
+
+    # @network_operation(dt = 10*ms)
+    # def f(t):
+    #     print(np.shape(noise))
+    # net.add(f)
+    net.store()
+
+    n = 0 #Counting index
+    for j in range(num_odors):
+        for k in range(num_trials):
+            t_array = m_arrays[int(np.floor(j/sp_odors))]
+            noise = noise_amp
+            net.restore()
+            G_AL.scale = I_arr[j%sp_odors] # 0 or 1
+
+            if k == 0 and train:
+                noise = 0
+
+            # need to double check out current is saved!!! Right now, no numbers are skipped
+            net.run(run_time, report = 'text')
+            np.save(prefix+'spikes_t_'+str(n+start_number) ,spikes_AL.t)
+            np.save(prefix+'spikes_i_'+str(n+start_number) ,spikes_AL.i)
+            np.save(prefix+'I_'+str(n+start_number), trace_current.I_inj*trace_current.scale + trace_current.I_noise)
+            np.save(prefix+'trace_V_'+str(n+start_number), trace_AL.V[:,start_skip:])
+            np.save(prefix+'trace_t_'+str(n+start_number), trace_AL.t[start_skip:])
+
+            np.save(prefix+'labels_'+str(n+start_number), np.ones(len(trace_AL.t[start_skip:]))*(j+shift_odor_num))
+            #np.save(prefix + 'trace_scale_'+str(n),trace_current.scale[:,start:])
+            n = n+1
 
 def mixtures2(run_params, mix_arr, states, net, start = 100):
-    assert len(mix_arr) ==2, 'mix_arr must have length 2' 
+    assert len(mix_arr) ==2, 'mix_arr must have length 2'
 
     num_odors = run_params['num_odors']
     num_trials = run_params['num_trials']
@@ -125,7 +206,7 @@ def runMNIST(run_params, imgs, states, net):
             net.restore()
             print('image: ' + str(n))
             print('label: '+ str(labels[i][0]))
-            
+
             #right now creating binary image
             rates = np.where(imgs[i%60000,:,:] > bin_thresh, 1, 0)*inp
 
@@ -137,9 +218,9 @@ def runMNIST(run_params, imgs, states, net):
             I = np.where(I > inp, inp, I)
             print(np.sum(I/inp))
 
-            G_AL.I_inj = br.nA*I
-            
-            net.run(run_time*br.ms, report = 'text')
+            G_AL.I_inj = nA*I
+
+            net.run(run_time*ms, report = 'text')
 
             np.save(prefix+'spikes_t_'+str(n) ,spikes_AL.t)
             np.save(prefix+'spikes_i_'+str(n) ,spikes_AL.i)
@@ -192,7 +273,7 @@ def get_rand_I(N, p, I_inp):
 
 
 '''
-MNIST helper function to load and unpack MNIST data.  To run you need to download 
+MNIST helper function to load and unpack MNIST data.  To run you need to download
 the MNIST dataset from http://yann.lecun.com/exdb/mnist/.
 
 picklename: name of file to write/read data from

@@ -1,0 +1,8 @@
+
+*.npy
+*.png
+*.pyc
+*.npz
+*.pdf
+*.zip
+*.pickle

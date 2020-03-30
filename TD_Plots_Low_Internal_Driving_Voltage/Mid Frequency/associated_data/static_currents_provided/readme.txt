@@ -1,0 +1,1 @@
+The .npz file includes each current as a subarray with dimension 1.

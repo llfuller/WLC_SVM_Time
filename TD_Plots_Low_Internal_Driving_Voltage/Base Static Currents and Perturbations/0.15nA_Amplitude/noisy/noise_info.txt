@@ -1,0 +1,16 @@
+# Can crease a random time delay between neurons so the current waveform is
+# slightly shifted
+#G_AL.td = np.random.uniform(low = 0, high = 30, size =N_AL)
+G_AL.td = 0
+net.store()
+
+# current settings
+inp = 1.0
+noise_amp = 0.1*np.sqrt(3) #max noise as a fraction of inp
+noise_test = 0.1*np.sqrt(3)
+
+# Different spatial injections
+sp_odors = 1
+num_odors = int(sp_odors*n_waveforms)
+num_train = 1
+num_test = 1

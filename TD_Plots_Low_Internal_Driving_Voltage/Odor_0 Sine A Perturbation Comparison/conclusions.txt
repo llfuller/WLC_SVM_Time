@@ -1,0 +1,4 @@
+PCA shows all paths for different amplitudes seem to overlap in PCA space. 
+Confusion matrix shows all 10 variations being classified as 2 different odors.
+
+I concluse that WLC+SVM is robust to sine perturbation amplitude changes.

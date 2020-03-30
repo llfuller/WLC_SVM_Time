@@ -62,7 +62,6 @@ def doPCA(trace_V_arr, k = 3):
 
     # svd decomposition and extract eigen-values/vectors
     pca = PCA(n_components=k)
-    print("Shape of data.T that pca.fit uses")
     print(np.shape(data.T))
     pca.fit(data.T)
 

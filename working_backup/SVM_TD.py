@@ -20,7 +20,7 @@ run_time = 120*ms
 defaultclock.dt = .02*ms # for some reason this shouldn't be changed! I don't know why though.
 test_I_arr_file_loaded = np.load('comparison_files/test_I_arr_file.npz')
 I = np.multiply(np.power(10, 9), np.array(test_I_arr_file_loaded['I_arr']))
-# print("I is "+str(I[0][:6]))
+print("I is "+str(I[0][:6]))
 
 N_AL = 800
 in_AL = .1
@@ -119,11 +119,12 @@ run_params_test = dict( num_odors = num_odors,
                         train = False)
 
 # Run to create training and test data
-# ex.createDataTD(run_params_train, I_arr, states, net, t_array=t_array)
+ex.createDataTD(run_params_train, I_arr, states, net, t_array=t_array)
+# ex.createDataTD(run_params_test, I_arr, states, net, t_array=t_array)
 #
 # Loading data
-loading_train_prefix = "train/run_3_25_2020_odor_0_many_sine_A_perturbations/"
-loading_test_prefix = "test/run_3_25_2020_odor_0_many_sine_A_perturbations/test_"
+loading_train_prefix = "train/run_3_25_2020_odor_0_many_sine_f_perturbations/"
+loading_test_prefix = "test/run_3_25_2020_odor_0_many_sine_f_perturbations/test_"
 spikes_t_arr, spikes_i_arr, I_arr, trace_V_arr, trace_t_arr, label_arr = anal.load_data(loading_train_prefix, num_runs = num_odors*num_train)
 spikes_t_test_arr, spikes_i_test_arr, I_test_arr, test_V_arr, test_t_arr, label_test_arr = anal.load_data(loading_test_prefix, num_runs = num_odors*num_test)
 
@@ -161,19 +162,19 @@ print("SHape is "+str(np.shape(label_arr)))
 # Shorten times of loaded arrays
 skip_to_time = 1000
 reduced_time_list_of_array_trace_V_arr = []
-for anArray in  trace_V_arr[:2]:
+for anArray in  trace_V_arr[8:]:
     reduced_time_list_of_array_trace_V_arr.append(anArray[:,skip_to_time:])
 reduced_time_list_of_label_arr = []
-for anArray in  label_arr[:2]:
+for anArray in  label_arr[8:]:
     reduced_time_list_of_label_arr.append(anArray[skip_to_time:])
 print(np.shape(reduced_time_list_of_array_trace_V_arr))
 
 
 reduced_time_list_of_array_test_V_arr = []
-for anArray in  test_V_arr[:2]:
+for anArray in  test_V_arr[8:]:
     reduced_time_list_of_array_test_V_arr.append(anArray[:,skip_to_time:])
 reduced_time_list_of_label_test_arr = []
-for anArray in  label_test_arr[:2]:
+for anArray in  label_test_arr[8:]:
     reduced_time_list_of_label_test_arr.append(anArray[skip_to_time:])
 
 # -------------------------------------------------------------------

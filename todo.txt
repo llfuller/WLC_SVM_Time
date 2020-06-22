@@ -1,0 +1,2 @@
+Change neuron_models.py comment under class n_FitzHugh_Nagumo to accurately reflect injected current amplitude.
+Check in SVM_TD that number of neurons is used as 800 correctly (not 1000) throughout calculation.

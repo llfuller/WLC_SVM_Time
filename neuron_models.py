@@ -59,9 +59,9 @@ class n_FitzHugh_Nagumo:
         return
 
     def eqs(self):
-        # active is a variable that can be used to assign which neurons are active. For time dependent stimuli,
-        # you can assign I_inj as the function ranging from [-1,1], use a network operator to update, and
-        # use active to assign max amplitude and active neurons.
+
+        # For time dependent stimuli,
+        # you can assign I_inj and use a network operator to update
         eqns_AL = '''
                     I_inj : amp
                     I_synI : 1

@@ -132,7 +132,7 @@ print(mixture_pairs)
 
 #---------------------------------------------------------------
 # run the simulation and save to disk
-# ex.createDataTD(run_params_train, I_arr, states, net, t_array=t_array)
+ex.createDataTD(run_params_train, I_arr, states, net, t_array=t_array)
 
 # load in the data from disk
 spikes_t_arr, spikes_i_arr, I_arr, trace_V_arr, trace_t_arr, label_arr \
@@ -147,19 +147,19 @@ normalized_Training_Voltages = anal.normalize(X, mini, maxi) # 0 if minimum valu
 point_Labels = np.hstack(label_arr)
 
 # train the SVM
-# clf = anal.learnSVM(normalized_Training_Voltages, point_Labels)
+clf = anal.learnSVM(normalized_Training_Voltages, point_Labels)
 
-for mixture_pair in mixture_pairs[:2]:
+for mixture_pair in mixture_pairs:
     print("Testing this file.")
     print("Larger loop at " +str(mixture_pair))
     current_index_B = mixture_pair[0]
     current_index_A = mixture_pair[1]
     save_numbers = "(" + str(current_index_B) + "," + str(current_index_A) + ")_"
-    # ex.mixtures2_TD(run_params_test, I_arr, states, net, mixture_pairs,
-    #                 np_arrays_of_currents, defaultclock, current_index_B, current_index_A,
-    #                 t_array=t_array, num_mixtures=num_mixtures)
+    ex.mixtures2_TD(run_params_test, I_arr, states, net, mixture_pairs,
+                    np_arrays_of_currents, defaultclock, current_index_B, current_index_A,
+                    t_array=t_array, num_mixtures=num_mixtures)
 
-for mixture_pair in mixture_pairs[:2]:
+for mixture_pair in mixture_pairs:
     print("Larger loop at " +str(mixture_pair))
     current_index_B = mixture_pair[0]
     current_index_A = mixture_pair[1]

@@ -17,7 +17,7 @@ np.random.seed(125)
 
 
 run_time = 120*ms
-defaultclock.dt = .02*ms # for some reason this shouldn't be changed! I don't know why though.
+defaultclock.dt = .02*ms
 test_I_arr_file_loaded = np.load('comparison_files/test_I_arr_file.npz')
 I = np.multiply(np.power(10, 9), np.array(test_I_arr_file_loaded['I_arr']))
 # print("I is "+str(I[0][:6]))
@@ -77,8 +77,8 @@ noise_test = 0.1*np.sqrt(3)
 # Different spatial injections
 sp_odors = 1
 num_odors = int(sp_odors*n_waveforms)
-num_train = 1
-num_test = 1
+num_train = 1 #if 1, no noise introduced to computation
+num_test = 1 #if 1, no noise introduced to computation
 
 
 I_arr = []
@@ -119,7 +119,7 @@ run_params_test = dict( num_odors = num_odors,
                         train = False)
 
 # Run to create training and test data
-# ex.createDataTD(run_params_train, I_arr, states, net, t_array=t_array)
+ex.createDataTD(run_params_train, I_arr, states, net, t_array=t_array)
 #
 # Loading data
 loading_train_prefix = "train/run_3_25_2020_odor_0_many_sine_A_perturbations/"
@@ -127,10 +127,15 @@ loading_test_prefix = "test/run_3_25_2020_odor_0_many_sine_A_perturbations/test_
 spikes_t_arr, spikes_i_arr, I_arr, trace_V_arr, trace_t_arr, label_arr = anal.load_data(loading_train_prefix, num_runs = num_odors*num_train)
 spikes_t_test_arr, spikes_i_test_arr, I_test_arr, test_V_arr, test_t_arr, label_test_arr = anal.load_data(loading_test_prefix, num_runs = num_odors*num_test)
 
+print("Check trace shape here")
+print(np.shape(trace_V_arr))
 
 
 # Plotting just for odor 1
+# Multiplying by 1000 for units to be in ms
 time_array = np.multiply(trace_t_arr[0],1000)
+print("CHeck time_array shape here")
+print(time_array)
 # print("Seeing currents of: "+str(I_arr[0]))
 # matplotlib.pyplot.figure()
 # matplotlib.pyplot.imshow(I_arr[0])
